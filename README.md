@@ -38,10 +38,10 @@
     ai音频（训练模型待定）、ai图片（训练模型待定）
 
 # 安装依赖
-    npm install
+    yarn
 
 # 执行程序
-    npm start
+    yarn start
 
 # 打包程序
-    npm run build
+    yarn run build

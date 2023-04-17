@@ -1,28 +1,23 @@
-import { Button } from 'antd';
-import styled from 'styled-components';
-import { useSpring, animated } from '@react-spring/web'
 import './App.less';
+import { Suspense } from 'react';
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import routes from "@/data/route";
 
-function App() {
-  const [style, api] = useSpring(() => ({
-    from: { x: 0 },
-    to: { x: 100 },
-  }));
-  return (
-    <div className="App">
-      hello world
-      <animated.div style={style}>
-        <Mybutton type='primary'>111</Mybutton>
-      </animated.div>
+const App = () => {
+  return <BrowserRouter>
+    <div id='App'>
+      <Routes>
+        {routes.map((item, index) => {
+          return <Route
+            key={index}
+            path={item.path}
+            element={<Suspense fallback={<div>loading</div>}>
+              111
+            </Suspense>} />
+        })}
+      </Routes>
     </div>
-  );
+  </BrowserRouter >
 }
 
 export default App;
-
-const Mybutton = styled(Button)`
-  font-size: 32px;
-  font-weight: 600;
-  width: 100px;
-  height: 50px;
-`;
