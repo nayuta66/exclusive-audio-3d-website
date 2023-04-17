@@ -1,9 +1,10 @@
-import React from "react";
 import { Outlet } from "react-router-dom";
 import "./index.less";
 
-export default React.memo(() => {
+const Layout = () => {
     return <div className="container">
         <Outlet />
     </div>
-});
+}
+
+export default Layout;

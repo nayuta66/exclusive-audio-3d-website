@@ -1,10 +1,9 @@
 import './App.less';
-import { useEffect, useCallback, Suspense } from 'react';
+import { useCallback, Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import routes from "@/data/route";
 
 const App = () => {
-
   const formatRoutes = useCallback((routes: any) => {
     return routes.map((route: any, index: any) => {
       if (route.children && route.children.length > 0) {
@@ -25,10 +24,6 @@ const App = () => {
         </Suspense>} />
     })
   }, []);
-
-  useEffect(() => {
-    console.log(formatRoutes(routes));
-  }, [formatRoutes]);
 
   return <BrowserRouter>
     <div id='App'>

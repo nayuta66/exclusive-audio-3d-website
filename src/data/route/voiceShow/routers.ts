@@ -15,7 +15,7 @@ const ModuleRouters = [
         children: [
             {
                 tag: 'Route',
-                name: 'ai制作',
+                name: '音发现',
                 path: URLS.show,
                 element: VoiceShow,
                 exact: true,
