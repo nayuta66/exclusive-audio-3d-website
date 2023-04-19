@@ -4,6 +4,7 @@ import * as three from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import WebGL from 'three/examples/jsm/capabilities/WebGL';
+import tween from '@tweenjs/tween.js';
 
 const HomePage = () => {
 
@@ -11,12 +12,14 @@ const HomePage = () => {
     // fov视野角度, aspect长宽比, near近截面, far远截面
     const camera = new three.PerspectiveCamera(100, window.innerWidth / window.innerHeight, 0.1, 1000);
     const renderer = new three.WebGLRenderer({ antialias: true });
-    const loader = new GLTFLoader();
+    const gltfLoader = new GLTFLoader();
+    const textureLoader = new three.TextureLoader();
     const controls = new OrbitControls(camera, renderer.domElement);
     const clock = new three.Clock();
 
     // 3D模型
     const model = useRef<any>();
+    // 动画混合器
     const mixer = useRef<any>();
 
     // 循环渲染
@@ -32,14 +35,24 @@ const HomePage = () => {
     useEffect(() => {
         renderer.setPixelRatio(window.devicePixelRatio);
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setClearColor(0x191919, 1);
         renderer.outputEncoding = three.sRGBEncoding;
+        textureLoader.load('texture/musician_cyber_bedroom.jpg', (texture) => {
+            texture.encoding = three.sRGBEncoding;
+            texture.mapping = three.EquirectangularReflectionMapping;
+            scene.background = texture;
+        }, undefined, (error) => {
+            console.error(error);
+        });
+
+        // 控制器配置初始化
+        controls.enableZoom = false;
+
         // 将canvas添加到dom中
         const el = document.getElementById('homepage-canvas');
         el && el.appendChild(renderer.domElement);
 
         // 加载模型
-        loader.load('gltf/robot_playground/scene.gltf', (gltf) => {
+        gltfLoader.load('gltf/robot_playground/scene.gltf', (gltf) => {
             model.current = gltf.scene;
             scene.add(model.current);
 
@@ -48,11 +61,9 @@ const HomePage = () => {
             mixer.current = new three.AnimationMixer(gltf.scene);
             if (animations && animations.length > 0) {
                 animations.forEach((clip: three.AnimationClip) => {
-                    console.log(mixer);
                     mixer.current.clipAction(clip).play();
                 });
             }
-
         }, undefined, (error) => {
             console.error(error);
         });
