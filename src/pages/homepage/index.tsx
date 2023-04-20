@@ -1,3 +1,4 @@
+import React from 'react'
 import { useState, useRef, useEffect } from 'react';
 import './index.less'
 import * as THREE from 'three';
@@ -5,8 +6,9 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import WebGL from 'three/examples/jsm/capabilities/WebGL';
 import TWEEN from '@tweenjs/tween.js';
+import { Loading } from '@/components';
 
-const HomePage = () => {
+const HomePage = React.memo(() => {
 
     const [loading, setLoading] = useState(true);
 
@@ -30,12 +32,19 @@ const HomePage = () => {
 
     // 鼠标事件查找
     const findEvent = (object: THREE.SkinnedMesh | THREE.Object3D) => {
+        let cur = object;
         let parent = object.parent;
-        let name = parent?.name;
         while (parent) {
+            cur = parent;
             parent = parent.parent;
-            name = parent?.name;
         }
+        let name: string = '';
+        //  遍历其子节点，获取模型name
+        cur.children.forEach((child: THREE.SkinnedMesh | THREE.Object3D) => {
+            if (child.name) {
+                name = child.name;
+            }
+        });
         return name;
     };
     // 鼠标事件执行
@@ -149,12 +158,8 @@ const HomePage = () => {
 
     return <div className="homepage">
         <div id='homepage-canvas' style={{ visibility: loading ? 'hidden' : 'visible' }}></div>
-        {loading ?
-            <div className='homepage-loading'>
-                <img className='homepage-loading-img' src={require('@/asserts/images/loading.gif')} />
-            </div>
-            : <></>}
+        {loading ? <Loading /> : <></>}
     </div >
-}
+});
 
 export default HomePage;

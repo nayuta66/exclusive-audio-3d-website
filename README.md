@@ -25,7 +25,7 @@
         3、展示用户用ai生成或者自己上传的专属音乐/声音（例如白噪音、asmr助眠、自然音等），附带用户编辑的数字藏品链接。
         对音频感兴趣的话，可以联系制作人，目前仅支持私下联系
         4、作品点赞、评论、收藏
-    音展区：
+    音播区：
         一个3D的音乐播放展示区
         1、旋律可视化
         2、律动的人物模型
@@ -34,7 +34,7 @@
 # 技术选型
     create-react-app、react18、ts；采用craco覆盖cra的webpack的配置
     less、antd5、styled-componets、react-spring动画库
-    threejs、blender建模
+    threejs、tweenjs补间动画、blender建模
     ai音频（训练模型待定）、ai图片（训练模型待定）
 
 # 安装依赖
