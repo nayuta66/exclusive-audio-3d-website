@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { MouseEvent } from 'react'
 import { useState, useRef, useEffect } from 'react';
 import './index.less'
 import * as THREE from 'three';
@@ -14,21 +14,23 @@ const HomePage = React.memo(() => {
 
     const scene = new THREE.Scene();
     // fov视野角度, aspect长宽比, near近截面, far远截面
-    const camera = new THREE.PerspectiveCamera(100, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const camera = new THREE.PerspectiveCamera(100, window.innerWidth / window.innerHeight, 0.1, 2000);
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     const gltfLoader = new GLTFLoader();
     const textureLoader = new THREE.TextureLoader();
     const controls = new OrbitControls(camera, renderer.domElement);
-    const tween = new TWEEN.Tween(camera.position);
     const clock = new THREE.Clock();
 
     // 3D模型
-    const model = useRef<any>();
+    const model = useRef<any[]>([]);
     // 动画混合器
-    const mixer = useRef<any>();
+    const mixer = useRef<any[]>([]);
     // 光线投射鼠标拾取
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
+
+    // 角度弧度换算
+    const degToRad = (deg: number) => deg * Math.PI / 180;
 
     // 鼠标事件查找
     const findEvent = (object: THREE.SkinnedMesh | THREE.Object3D) => {
@@ -45,14 +47,58 @@ const HomePage = React.memo(() => {
                 name = child.name;
             }
         });
+        console.log(cur);
         return name;
     };
     // 鼠标事件执行
     const executeEvent = (name: string | undefined) => {
-        console.log(name);
+        switch (name) {
+            case 'robot_playground':
+                loadSceneModel('gltf/cloud_home_station/scene.gltf', 'cloud_home_station', [0, 0, 0], [0, 0, 0], (success: boolean) => {
+                    if (success) {
+                        controls.target.set(0, 1, 1);
+                        new TWEEN.Tween(camera.position).to({ x: 0, y: 1, z: 1 }, 1500).start()
+                            .onComplete(() => {
+                                controls.target.set(0, 0, 0);
+                                removeSceneModel('robot_playground');
+                                // 根据名称查找模型
+                                model.current.forEach((item) => {
+                                    const key = Object.keys(item)[0];
+                                    if (key === 'cloud_home_station') {
+                                        scene.add(item[key]);
+                                    };
+                                });
+                                new TWEEN.Tween(camera.position).to({ x: 0, y: 1, z: 2 }, 2000).start();
+                            });
+                    }
+                }, true);
+                break;
+            default:
+                loadSceneModel('gltf/robot_playground/scene.gltf', 'robot_playground', [0, 0, 0], [0, 0, 0], (success: boolean) => {
+                    if (success) {
+                        controls.target.set(0, 1, 1);
+                        const ta = new TWEEN.Tween(camera.position).to({ x: 0, y: 1, z: 1 }, 1500).start()
+                            .onComplete(() => {
+                                changeSceneTexture('texture/making_voice_cyber_bedroom.jpg');
+                                controls.target.set(0, 0, 0);
+                                removeSceneModel('cloud_home_station');
+                                // 根据名称查找模型
+                                model.current.forEach((item) => {
+                                    const key = Object.keys(item)[0];
+                                    if (key === 'robot_playground') {
+                                        scene.add(item[key]);
+                                    };
+                                });
+                            });
+                        const tb = new TWEEN.Tween(camera.position).to({ x: 0, y: 1, z: 3 }, 2000);
+                        ta.chain(tb);
+                    }
+                }, true);
+                break;
+        }
     }
-
-    const onMouseClick = (event: MouseEvent) => {
+    // 鼠标点击事件
+    const onMouseDBClick = (event: any) => {
         mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
         // 通过摄像机和鼠标位置更新射线
@@ -66,15 +112,75 @@ const HomePage = React.memo(() => {
         }
     }
 
+    // 更换场景贴图
+    const changeSceneTexture = (path: string) => {
+        textureLoader.load(path, (texture) => {
+            texture.encoding = THREE.sRGBEncoding;
+            texture.mapping = THREE.EquirectangularReflectionMapping;
+            scene.background = texture;
+        }, undefined, (error) => {
+            console.log(error);
+        });
+    }
+
+    // 加载场景模型
+    const loadSceneModel = (path: string, name: string,
+        position: [x: number, y: number, z: number],
+        rotation: [x: number, y: number, z: number],
+        onFinish?: Function,
+        temp?: boolean,
+    ) => {
+        gltfLoader.load(path, (gltf) => {
+            const newName = gltf.scene.name = name;
+            model.current.push({ [newName]: gltf.scene });
+            !temp && scene.add(gltf.scene);
+            // 设置模型初始位置
+            gltf.scene.position.set(position[0], position[1], position[2]);
+            gltf.scene.rotation.set(rotation[0], rotation[1], rotation[2]);
+            // 加载模型动画
+            const animations = gltf.animations;
+            const newMixer = new THREE.AnimationMixer(gltf.scene);
+            mixer.current.push({ [newName]: newMixer });
+            if (animations && animations.length > 0) {
+                animations.forEach((clip: THREE.AnimationClip) => {
+                    newMixer.clipAction(clip).play();
+                });
+            }
+            onFinish && onFinish(true);
+
+        }, undefined, (error) => {
+            console.error(error);
+            onFinish && onFinish(false);
+        });
+    }
+
+    // 删除场景模型
+    const removeSceneModel = (name: string) => {
+        model.current.forEach((item, index) => {
+            const key = Object.keys(item)[0];
+            if (key === name) {
+                scene.remove(item[key]);
+                model.current.splice(index, 1);
+                mixer.current.splice(index, 1);
+            }
+        });
+    }
+
     // 循环渲染
     const animate = () => {
+        // 提供更好的渲染性能
         requestAnimationFrame(animate);
         // 轨道更新
         controls.update();
         // 获取delta时间
         const delta = clock.getDelta();
         // 更新动画
-        mixer.current && mixer.current.update(delta);
+        if (mixer.current && mixer.current.length > 0) {
+            mixer.current.forEach(item => {
+                const key = Object.keys(item)[0];
+                item[key].update(delta);
+            });
+        }
         // 补间动画更新
         TWEEN.update();
         renderer.render(scene, camera);
@@ -85,50 +191,29 @@ const HomePage = React.memo(() => {
         renderer.setPixelRatio(window.devicePixelRatio);
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.outputEncoding = THREE.sRGBEncoding;
-        textureLoader.load('texture/musician_cyber_bedroom.jpg', (texture) => {
-            texture.encoding = THREE.sRGBEncoding;
-            texture.mapping = THREE.EquirectangularReflectionMapping;
-            scene.background = texture;
-        }, undefined, (error) => {
-            console.error(error);
-        });
 
         // 控制器配置初始化
-        controls.enableZoom = true;
-        controls.enablePan = true;
+        controls.enableZoom = false;
 
         // 将canvas添加到dom中
         const el = document.getElementById('homepage-canvas');
         el && el.appendChild(renderer.domElement);
 
         // 加载模型
-        gltfLoader.load('gltf/robot_playground/scene.gltf', (gltf) => {
-            model.current = gltf.scene;
-            model.current.name = 'robot_playground';
-            scene.add(model.current);
-
-            // 加载模型动画
-            const animations = gltf.animations;
-            mixer.current = new THREE.AnimationMixer(gltf.scene);
-            if (animations && animations.length > 0) {
-                animations.forEach((clip: THREE.AnimationClip) => {
-                    mixer.current.clipAction(clip).play();
-                });
-            }
-
-            // 停止加载loading
-            setLoading(false);
-
-        }, undefined, (error) => {
-            console.error(error);
-        });
+        loadSceneModel(
+            'gltf/cloud_home_station/scene.gltf',
+            'cloud_home_station', [0, 0, 0], [0, 0, 0],
+            () => {
+                setLoading(false)
+            });
 
         // 设置相机初始位置
-        camera.position.set(0, 0, 3);
+        camera.position.set(0, 3, 5);
 
         // 设置初始补间动画
-        tween.to({ x: 0, y: 2 }, 3000);
-        tween.start();
+        const tween = new TWEEN.Tween(camera.position);
+        controls.target.set(0, 0, 0);
+        tween.to({ x: 0, y: 1, z: 2 }, 3000).start();
 
         // 加载灯光：环境光、平行光（产生阴影）
         const light = new THREE.AmbientLight(0xffffff); // soft white light scene.add( light );
@@ -149,10 +234,10 @@ const HomePage = React.memo(() => {
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
         // 监控鼠标点击事件
-        window.addEventListener('click', onMouseClick, false);
+        window.addEventListener('dblclick', onMouseDBClick);
         return () => {
             window.removeEventListener('resize', () => { });
-            window.removeEventListener('click', () => { });
+            window.removeEventListener('dblclick', () => { });
         }
     }, []);
 
