@@ -1,4 +1,4 @@
-import React, { MouseEvent } from 'react'
+import React from 'react'
 import { useState, useRef, useEffect } from 'react';
 import './index.less'
 import * as THREE from 'three';
@@ -47,7 +47,6 @@ const HomePage = React.memo(() => {
                 name = child.name;
             }
         });
-        console.log(cur);
         return name;
     };
     // 鼠标事件执行
@@ -56,10 +55,9 @@ const HomePage = React.memo(() => {
             case 'robot_playground':
                 loadSceneModel('gltf/cloud_home_station/scene.gltf', 'cloud_home_station', [0, 0, 0], [0, 0, 0], (success: boolean) => {
                     if (success) {
-                        controls.target.set(0, 1, 1);
-                        new TWEEN.Tween(camera.position).to({ x: 0, y: 1, z: 1 }, 1500).start()
+                        new TWEEN.Tween(camera.position).to({ x: 0, y: 1, z: 4 }, 3000)
+                            .easing(TWEEN.Easing.Quartic.InOut).start()
                             .onComplete(() => {
-                                controls.target.set(0, 0, 0);
                                 removeSceneModel('robot_playground');
                                 // 根据名称查找模型
                                 model.current.forEach((item) => {
@@ -68,7 +66,7 @@ const HomePage = React.memo(() => {
                                         scene.add(item[key]);
                                     };
                                 });
-                                new TWEEN.Tween(camera.position).to({ x: 0, y: 1, z: 2 }, 2000).start();
+                                new TWEEN.Tween(camera.position).to({ x: 0, y: 1, z: 5 }, 1500).start();
                             });
                     }
                 }, true);
@@ -76,11 +74,11 @@ const HomePage = React.memo(() => {
             default:
                 loadSceneModel('gltf/robot_playground/scene.gltf', 'robot_playground', [0, 0, 0], [0, 0, 0], (success: boolean) => {
                     if (success) {
-                        controls.target.set(0, 1, 1);
-                        const ta = new TWEEN.Tween(camera.position).to({ x: 0, y: 1, z: 1 }, 1500).start()
+                        const ta = new TWEEN.Tween(camera.position).to({ x: 0, y: 1, z: 2 }, 3000)
+                            .easing(TWEEN.Easing.Quartic.InOut)
+                            .start()
                             .onComplete(() => {
                                 changeSceneTexture('texture/making_voice_cyber_bedroom.jpg');
-                                controls.target.set(0, 0, 0);
                                 removeSceneModel('cloud_home_station');
                                 // 根据名称查找模型
                                 model.current.forEach((item) => {
@@ -90,7 +88,7 @@ const HomePage = React.memo(() => {
                                     };
                                 });
                             });
-                        const tb = new TWEEN.Tween(camera.position).to({ x: 0, y: 1, z: 3 }, 2000);
+                        const tb = new TWEEN.Tween(camera.position).to({ x: 0, y: 1, z: 3 }, 1500);
                         ta.chain(tb);
                     }
                 }, true);
@@ -193,7 +191,9 @@ const HomePage = React.memo(() => {
         renderer.outputEncoding = THREE.sRGBEncoding;
 
         // 控制器配置初始化
+        controls.enabled = false;
         controls.enableZoom = false;
+        controls.autoRotate = false;
 
         // 将canvas添加到dom中
         const el = document.getElementById('homepage-canvas');
@@ -213,7 +213,7 @@ const HomePage = React.memo(() => {
         // 设置初始补间动画
         const tween = new TWEEN.Tween(camera.position);
         controls.target.set(0, 0, 0);
-        tween.to({ x: 0, y: 1, z: 2 }, 3000).start();
+        tween.to({ x: 0, y: 1, z: 5 }, 3000).start().onComplete(() => controls.enabled = true);
 
         // 加载灯光：环境光、平行光（产生阴影）
         const light = new THREE.AmbientLight(0xffffff); // soft white light scene.add( light );
@@ -233,7 +233,7 @@ const HomePage = React.memo(() => {
         window.addEventListener('resize', () => {
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
-        // 监控鼠标点击事件
+        // 监听鼠标双击事件
         window.addEventListener('dblclick', onMouseDBClick);
         return () => {
             window.removeEventListener('resize', () => { });
