@@ -3,14 +3,14 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import routes from "./routes";
 
 const Router = () => {
-  
+
   const formatRoutes = useCallback((routes: any) => {
     return routes.map((route: any, index: any) => {
       if (route.children && route.children.length > 0) {
         return <Route
           key={index}
           path={route.path}
-          element={<Suspense fallback={<div>loading</div>}>
+          element={<Suspense fallback={<></>}>
             <route.element></route.element>
           </Suspense>}
         >
@@ -19,7 +19,7 @@ const Router = () => {
       } else return <Route
         key={index}
         path={route.path}
-        element={<Suspense fallback={<div>loading</div>}>
+        element={<Suspense fallback={<></>}>
           <route.element></route.element>
         </Suspense>} />
     })

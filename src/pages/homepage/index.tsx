@@ -243,7 +243,8 @@ const HomePage = React.memo(() => {
 
     return <div className="homepage">
         <div id='homepage-canvas' style={{ visibility: loading ? 'hidden' : 'visible' }}></div>
-        {loading ? <Loading /> : <></>}
+        {loading ? <Loading /> : <>
+        </>}
     </div >
 });
 
